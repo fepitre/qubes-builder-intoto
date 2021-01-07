@@ -1,0 +1,20 @@
+
+update-repo: post-intoto
+
+ifneq (,$(findstring $(DISTRIBUTION), fedora centos))
+post-intoto: pkg_name=$(basename $(basename $(notdir $(firstword $(packages)))))
+else ifneq (,$(findstring $(DISTRIBUTION), debian qubuntu))
+post-intoto: pkg_name=$(firstword $(release_name_full) $(release_name_dist))
+else
+post-intoto: pkg_name=$(COMPONENT)
+endif
+
+ifeq (,$(REBUILDER_MIRROR))
+post-intoto:
+	@true
+else
+post-intoto: metadata=$(shell ls $(BUILDER_DIR)/$(ORIG_SRC)/$(OUTPUT_DIR)/$(pkg_name)*.link)
+post-intoto: buildinfo=$(shell ls $(BUILDER_DIR)/$(ORIG_SRC)/$(OUTPUT_DIR)/$(pkg_name)*.buildinfo)
+post-intoto:
+	[[ -z $(pkg_name) ]] || curl $(REBUILDER_MIRROR)/new_build -F metadata=@$(metadata) -F buildinfo=@$(buildinfo)
+endif
